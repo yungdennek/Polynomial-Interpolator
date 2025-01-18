@@ -1,0 +1,22 @@
+import cv2
+from matplotlib import pyplot as plt
+
+def img_grapher(img, N):
+    rows,cols,_ = img.shape
+    inputs = []
+    outputs = []
+
+    for i in range(cols):
+        for j in range(rows):
+            k = img[j,i]
+            if(k[0] == 0 and k[1] == 0 and k[2] == 0):
+                inputs.append(i)
+                outputs.append(j)
+
+    curve_error(inputs, outputs, N)
+
+img = cv2.imread('C:/Users/14158/Pictures/Line.png')
+
+plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+img_grapher(img, 4)
