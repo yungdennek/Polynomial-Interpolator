@@ -1,22 +1,183 @@
 import cv2
 from matplotlib import pyplot as plt
 
-def img_grapher(img, N):
+def inputs_outputs(img):
     rows,cols,_ = img.shape
     inputs = []
     outputs = []
 
     for i in range(cols):
         for j in range(rows):
+            j = rows - j - 1
             k = img[j,i]
-            if(k[0] == 0 and k[1] == 0 and k[2] == 0):
+            if(k[0] == 0 and k[1] == 0 and k[2] == 0 and i not in inputs):
                 inputs.append(i)
                 outputs.append(j)
 
+    return inputs, outputs
+
+def img_pixels(img):
+    rows,cols,_ = img.shape
+    pixels = []
+
+    for i in range(cols):
+        for j in range(rows):
+            j = rows - j - 1
+            k = img[j,i]
+            if(k[0] == 0 and k[1] == 0 and k[2] == 0):
+                pixels.append([i, j])
+
+    return pixels
+
+def io_to_pixels(inputs, outputs):
+    temp = []
+    for i in range(len(inputs)):
+        temp.append([inputs[i], outputs[i]])
+    return temp
+
+def pixels_to_io(pixels):
+    inputs = []
+    outputs = []
+    for pixel in pixels:
+        inputs.append(pixel[0])
+        outputs.append(pixel[1])
+    return inputs, outputs
+
+def in_pixels(pixels, p):
+    for pixel in pixels:
+        if pixel == p:
+            return True
+    return False
+
+def left_placement(pixels, pixel):
+    x, y = pixel[0], pixel[1]
+    return in_pixels(pixels, [x - 1, y]) or in_pixels(pixels, [x - 1, y - 1]) or in_pixels(pixels, [x - 1, y + 1])
+    
+def right_placement(pixels, pixel):
+    x, y = pixel[0], pixel[1]
+    return in_pixels(pixels, [x + 1, y]) or in_pixels(pixels, [x + 1, y - 1]) or in_pixels(pixels, [x + 1, y + 1])
+
+def up_placement(pixels, pixel):
+    x, y = pixel[0], pixel[1]
+    return in_pixels(pixels, [x, y - 1]) or in_pixels(pixels, [x - 1, y - 1]) or in_pixels(pixels, [x + 1, y - 1])
+
+def down_placement(pixels, pixel):
+    x, y = pixel[0], pixel[1]
+    return in_pixels(pixels, [x, y + 1]) or in_pixels(pixels, [x - 1, y + 1]) or in_pixels(pixels, [x + 1, y + 1])  
+
+def input_outputs(pixels, input):
+    temp = []
+
+    for pixel in pixels:
+        if(pixel[0] == input):
+            temp.append(pixel[1])
+    
+    return temp
+
+def input_pixels(pixels, input):
+    temp = []
+
+    for pixel in pixels:
+        if(pixel[0] == input):
+            temp.append(pixel)
+    
+    return temp
+
+def io_condenser(pixels):
+    inputs = []
+    outputs = []
+    
+    for pixel in pixels:
+        x = pixel[0]
+        if(x not in inputs):
+            inputs.append(x)
+            out = input_outputs(pixels, x)
+            outputs.append(sum(out) / len(out))
+
+    return inputs, outputs
+
+def is_directly_connected(pixel1, pixel2):
+    x1, y1 = pixel1[0], pixel1[1]
+    x2, y2 = pixel2[0], pixel2[1]
+
+    return (abs(x2 - x1) < 2) and (abs(y2 - y1) < 2)
+
+def connected_pixel(pixels, p):
+    for pixel in pixels:
+        if(is_directly_connected(pixel, p)):
+            return pixel
+    return p
+
+def closest_pixels(pixels, p):
+    temp = []
+
+    for pixel in pixels:
+        if(is_directly_connected(pixel, p)):
+            temp.append(pixel)
+    
+    return temp
+
+def connected_to(pixels, p):
+    for pixel in pixels:
+        if(is_directly_connected(pixel, p)):
+            return True
+    return False
+
+def contains_above_or_below(pixels, pixel):
+    x, y = pixel[0], pixel[1]
+    out = input_outputs(pixels, x)
+    if(y + 1 not in out and y - 1 not in out):
+        for o in out:
+            if(o > y + 1 or o < y - 1):
+                return True
+
+    return False
+
+def pixel_sorter(pixels):
+    temp = []
+    a, b = pixels[0][0], pixels[-1][0]
+    for i in range(a, b + 1):
+        outputs = input_outputs(pixels, i)
+        outputs.sort()
+        for output in outputs:
+            temp.append([i, output])
+    return temp
+
+def gaster_blaster(img, N):
+    connections = []
+
+    pixels = img_pixels(img)
+
+    ## pixels = pixel_sorter(pixels)
+    
+    print(pixels)
+
+    for pixel in pixels:
+        test = True
+        for connection in connections:
+            if(connected_to(connection, pixel) and not contains_above_or_below(connection, pixel)):
+                connection.append(pixel)
+                test = False
+        if(test):
+            connections.append([pixel])
+    for connection in connections:
+        print(connection)
+        i, o = io_condenser(connection)
+        curve_error(i, o, N)
+
+def img_grapher(img, N):
+    pixels = img_pixels(img)
+    inputs, outputs = io_condenser(pixels)
+
+    print(closest_pixels(pixels, [5, 58]))
+
     curve_error(inputs, outputs, N)
+
 
 img = cv2.imread('C:/Users/14158/Pictures/Line.png')
 
 plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
-img_grapher(img, 4)
+## img_grapher(img, 5)
+
+gaster_blaster(img, 5)
